@@ -1,6 +1,8 @@
+// types.ts
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+
 import {
   GraphQLObjectType,
   GraphQLString,
@@ -10,18 +12,57 @@ import {
   GraphQLScalarType,
   Kind,
 } from 'graphql';
-import type { PrismaClient } from '@prisma/client';
-
-export const UUIDType = new GraphQLScalarType({
-  name: 'UUID',
-  serialize: String,
-  parseValue: String,
-  parseLiteral: (ast: any) => (ast.kind === 'StringValue' ? ast.value : null),
-});
+import type { PrismaClient, User } from '@prisma/client';
+import DataLoader from 'dataloader';
 
 export interface Context {
   prisma: PrismaClient;
+  loaders: {
+    userSubscribedToLoader: DataLoader<string, User[]>;
+    subscribedToUserLoader: DataLoader<string, User[]>;
+  };
 }
+
+// export interface Context {
+//   prisma: PrismaClient;
+// }
+
+const isUUID = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  new RegExp('^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$').test(
+    value,
+  );
+
+export const UUIDType = new GraphQLScalarType({
+  name: 'UUID',
+  serialize(value) {
+    if (!isUUID(value)) {
+      throw new TypeError(`Invalid UUID.`);
+    }
+    return value;
+  },
+  parseValue(value) {
+    if (!isUUID(value)) {
+      throw new TypeError(`Invalid UUID.`);
+    }
+    return value;
+  },
+  parseLiteral(ast) {
+    if (ast.kind === Kind.STRING) {
+      if (isUUID(ast.value)) {
+        return ast.value;
+      }
+    }
+    return undefined;
+  },
+});
+
+// export const MyUUIDType = new GraphQLScalarType({
+//   name: 'UUID',
+//   serialize: String,
+//   parseValue: String,
+//   parseLiteral: (ast: any) => (ast.kind === 'StringValue' ? ast.value : null),
+// });
 
 export const MemberTypeObject = new GraphQLObjectType({
   name: 'MemberType',
