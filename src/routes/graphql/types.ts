@@ -18,8 +18,11 @@ import DataLoader from 'dataloader';
 export interface Context {
   prisma: PrismaClient;
   loaders: {
-    userSubscribedToLoader: DataLoader<string, User[]>;
-    subscribedToUserLoader: DataLoader<string, User[]>;
+    postsLoader: DataLoader<string, any[]>;
+    memberTypeLoader: DataLoader<string, any>;
+    userSubscribedToLoader: DataLoader<string, any[]>;
+    subscribedToUserLoader: DataLoader<string, any[]>;
+    profileLoader: DataLoader<string, any>;
   };
 }
 

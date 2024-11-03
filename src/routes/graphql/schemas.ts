@@ -50,22 +50,7 @@ const ProfileObject = new GraphQLObjectType({
     memberType: {
       type: MemberTypeObject,
       resolve: async (profile, _, context: Context) => {
-        // if (!profile || !profile.memberTypeId) {
-        //   // console.warn(`[Profile.memberType] Profile или memberTypeId отсутствуют для profile с ID: ${profile?.id || 'undefined'}`);
-        //   return null;
-        // }
-        // console.log('profile :>> ', profile);
-
-        const memberType = await context.prisma.memberType.findUnique({
-          where: { id: profile.memberTypeId }
-        });
-
-        // if (!profile.yearOfBirth) {
-        //   // console.warn(`[Profile.memberType] memberType не найден для ID: ${profile.memberTypeId}`);
-        //   return null;
-        // }
-
-        return memberType;
+        return context.loaders.memberTypeLoader.load(profile.memberTypeId);
       }
     },
   }),
@@ -80,82 +65,25 @@ const UserObject = new GraphQLObjectType({
     profile: {
       type: ProfileObject,
       resolve: async (user, _, context: Context) => {
-
-        // console.log('profile :>> ', user);
-
-        const profile = await context.prisma.profile.findUnique({
-          where: { userId: user.id }
-        });
-
-        // if (!profile) {
-        //   // console.warn(`[Query.profile] Профиль не найден для пользователя с ID: ${user.id}`);
-        //   return null;
-        // }
-
-        return profile;
+        return context.loaders.profileLoader.load(user.id);
       }
     },
     posts: {
       type: new GraphQLList(PostObject),
       resolve: async (user, _, context: Context) => {
-        try {
-          if (!user?.id) {
-            // console.warn('[User.posts] User id is undefined');
-            return [];
-          }
-
-          return context.prisma.post.findMany({
-            where: { authorId: user.id },
-          });
-        } catch (error) {
-          // console.error('[User.posts] Error resolving posts:', error);
-          throw error;
-        }
+        return context.loaders.postsLoader.load(user.id);
       },
     },
     userSubscribedTo: {
       type: new GraphQLList(UserObject),
       resolve: async (user, _, context: Context) => {
-        try {
-          if (!user?.id) {
-            // console.warn('[User.userSubscribedTo] User id is undefined');
-            return [];
-          }
-
-          const subscriptions = await context.prisma.subscribersOnAuthors.findMany({
-            where: { subscriberId: user.id },
-            include: { author: true },
-          });
-
-          return subscriptions.map(sub => sub.author);
-
-          // return context.loaders.userSubscribedToLoader.load(user.id);
-        } catch (error) {
-          // console.error('[User.userSubscribedTo] Error resolving subscriptions:', error);
-          throw error;
-        }
+        return context.loaders.userSubscribedToLoader.load(user.id);
       },
     },
     subscribedToUser: {
       type: new GraphQLList(UserObject),
       resolve: async (user, _, context: Context) => {
-        try {
-          if (!user?.id) {
-            // console.warn('[User.subscribedToUser] User id is undefined');
-            return [];
-          }
-
-          const subscriptions = await context.prisma.subscribersOnAuthors.findMany({
-            where: { authorId: user.id },
-            include: { subscriber: true },
-          });
-
-          return subscriptions.map(sub => sub.subscriber);
-          // return context.loaders.subscribedToUserLoader.load(user.id);
-        } catch (error) {
-          // console.error('[User.subscribedToUser] Error resolving subscribers:', error);
-          throw error;
-        }
+        return context.loaders.subscribedToUserLoader.load(user.id);
       },
     },
   }),
