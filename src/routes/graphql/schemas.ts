@@ -14,10 +14,9 @@ import {
   GraphQLInt,
   GraphQLFloat,
   GraphQLBoolean,
-  GraphQLScalarType,
-  Kind,
 } from 'graphql';
-import type { PrismaClient } from '@prisma/client';
+import { UUIDType } from './types/uuid.js';
+import { Context, MemberTypeIdScalar, MemberTypeObject, PostObject } from './types/types.js';
 
 export const gqlResponseSchema = Type.Partial(
   Type.Object({
@@ -37,36 +36,6 @@ export const createGqlResponseSchema = {
     }
   ),
 };
-
-interface Context {
-  prisma: PrismaClient;
-}
-
-const UUIDType = new GraphQLScalarType({
-  name: 'UUID',
-  serialize: String,
-  parseValue: String,
-  parseLiteral: (ast: any) => (ast.kind === 'StringValue' ? ast.value : null),
-});
-
-const MemberTypeObject = new GraphQLObjectType({
-  name: 'MemberType',
-  fields: {
-    id: { type: new GraphQLNonNull(GraphQLString) },
-    discount: { type: new GraphQLNonNull(GraphQLFloat) },
-    postsLimitPerMonth: { type: new GraphQLNonNull(GraphQLInt) },
-  },
-});
-
-const PostObject = new GraphQLObjectType({
-  name: 'Post',
-  fields: () => ({
-    id: { type: new GraphQLNonNull(GraphQLString) },
-    title: { type: new GraphQLNonNull(GraphQLString) },
-    content: { type: new GraphQLNonNull(GraphQLString) },
-    authorId: { type: new GraphQLNonNull(GraphQLString) },
-  }),
-});
 
 const ProfileObject = new GraphQLObjectType({
   name: 'Profile',
@@ -181,23 +150,6 @@ const UserObject = new GraphQLObjectType({
       },
     },
   }),
-});
-
-const MemberTypeIdScalar = new GraphQLScalarType({
-  name: 'MemberTypeId',
-  description: 'A string scalar for MemberTypeId',
-  serialize(value) {
-    return value;
-  },
-  parseValue(value) {
-    return value;
-  },
-  parseLiteral(ast) {
-    if (ast.kind === Kind.STRING) {
-      return ast.value;
-    }
-    return null;
-  },
 });
 
 const QueryType = new GraphQLObjectType<any, Context>({
