@@ -148,7 +148,6 @@ const CreateProfileInput = new GraphQLInputObjectType({
 const ChangeProfileInput = new GraphQLInputObjectType({
   name: 'ChangeProfileInput',
   fields: {
-    userId: { type: UUIDType },
     isMale: { type: GraphQLBoolean },
     yearOfBirth: { type: GraphQLInt },
     memberTypeId: { type: MemberTypeIdScalar },
