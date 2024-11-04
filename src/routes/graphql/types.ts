@@ -1,8 +1,6 @@
-// types.ts
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-
 import {
   GraphQLObjectType,
   GraphQLString,
@@ -25,10 +23,6 @@ export interface Context {
     profileLoader: DataLoader<string, any>;
   };
 }
-
-// export interface Context {
-//   prisma: PrismaClient;
-// }
 
 const isUUID = (value: unknown): value is string =>
   typeof value === 'string' &&
@@ -59,20 +53,6 @@ export const UUIDType = new GraphQLScalarType({
     return undefined;
   },
 });
-
-// export const MyUUIDType = new GraphQLScalarType({
-//   name: 'UUID',
-//   serialize: String,
-//   parseValue: String,
-//   parseLiteral: (ast: any) => (ast.kind === 'StringValue' ? ast.value : null),
-// });
-
-// export interface ExtendedUser extends User {
-//   userSubscribedToPreloaded?: boolean;
-//   subscribedToUserPreloaded?: boolean;
-//   userSubscribedTo?: User[];
-//   subscribedToUser?: User[];
-// }
 
 export const MemberTypeObject = new GraphQLObjectType({
   name: 'MemberType',

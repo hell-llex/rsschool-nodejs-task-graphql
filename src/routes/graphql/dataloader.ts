@@ -12,7 +12,7 @@ export function createLoaders(prisma: PrismaClient) {
         },
       });
 
-      return authorIds.map(id => 
+      return authorIds.map(id =>
         posts.filter(post => post.authorId === id)
       );
     }, { cache: false }),
@@ -26,7 +26,7 @@ export function createLoaders(prisma: PrismaClient) {
         },
       });
 
-      return memberTypeIds.map(id => 
+      return memberTypeIds.map(id =>
         memberTypes.find(mt => mt.id === id) ?? null
       );
     }, { cache: false }),
@@ -40,7 +40,7 @@ export function createLoaders(prisma: PrismaClient) {
         },
       });
 
-      return userIds.map(id => 
+      return userIds.map(id =>
         profiles.find(profile => profile.userId === id) ?? null
       );
     }, { cache: false }),
