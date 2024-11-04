@@ -18,7 +18,7 @@ import {
   GraphQLBoolean,
   GraphQLInputObjectType
 } from 'graphql';
-import { Context, MemberTypeIdScalar, MemberTypeObject, PostObject, UUIDType} from './types.js';
+import { Context, MemberTypeIdScalar, MemberTypeObject, PostObject, UUIDType } from './types.js';
 
 export const gqlResponseSchema = Type.Partial(
   Type.Object({
@@ -59,7 +59,7 @@ const ProfileObject = new GraphQLObjectType({
 const UserObject = new GraphQLObjectType({
   name: 'User',
   fields: () => ({
-    id: { type: new GraphQLNonNull(GraphQLString) },
+    id: { type: GraphQLString },
     name: { type: new GraphQLNonNull(GraphQLString) },
     balance: { type: new GraphQLNonNull(GraphQLFloat) },
     profile: {
@@ -76,13 +76,24 @@ const UserObject = new GraphQLObjectType({
     },
     userSubscribedTo: {
       type: new GraphQLList(UserObject),
-      resolve: async (user, _, context: Context) => {
+      resolve: async (user, _, context) => {
+        // Если данные уже загружены через include
+        if (user.userSubscribedTo) {
+          return user.userSubscribedTo;
+        }
+        // Иначе загружаем через DataLoader
         return context.loaders.userSubscribedToLoader.load(user.id);
       },
     },
     subscribedToUser: {
       type: new GraphQLList(UserObject),
-      resolve: async (user, _, context: Context) => {
+      resolve: async (user, _, context) => {
+        // Если данные уже загружены через include
+        // console.log('user :>> ', user);
+        if (user.subscribedToUser) {
+          return user.subscribedToUser;
+        }
+        // Иначе загружаем через DataLoader
         return context.loaders.subscribedToUserLoader.load(user.id);
       },
     },
@@ -151,7 +162,7 @@ const QueryType = new GraphQLObjectType<any, Context>({
       type: new GraphQLList(MemberTypeObject),
       resolve: async (_, __, context) => {
         // try {
-          return await context.prisma.memberType.findMany();
+        return await context.prisma.memberType.findMany();
         // } catch (error) {
         //   // console.error('[Query.memberTypes] Error resolving memberTypes:', error);
         //   throw error;
@@ -165,16 +176,16 @@ const QueryType = new GraphQLObjectType<any, Context>({
       },
       resolve: async (_, args, context) => {
         // try {
-          const memberType = await context.prisma.memberType.findUnique({
-            where: { id: args.id },
-          });
+        const memberType = await context.prisma.memberType.findUnique({
+          where: { id: args.id },
+        });
 
-          // if (!memberType) {
-          //   // console.warn(`[Query.memberType] No memberType found for id: ${args.id}`);
-          //   return null;
-          // }
+        // if (!memberType) {
+        //   // console.warn(`[Query.memberType] No memberType found for id: ${args.id}`);
+        //   return null;
+        // }
 
-          return memberType;
+        return memberType;
         // } catch (error) {
         //   // console.error('[Query.memberType] Error resolving memberType:', error);
         //   throw error;
@@ -185,7 +196,7 @@ const QueryType = new GraphQLObjectType<any, Context>({
       type: new GraphQLList(PostObject),
       resolve: async (_, __, context) => {
         // try {
-          return await context.prisma.post.findMany();
+        return await context.prisma.post.findMany();
         // } catch (error) {
         //   // console.error('[Query.posts] Error resolving posts:', error);
         //   throw error;
@@ -199,16 +210,16 @@ const QueryType = new GraphQLObjectType<any, Context>({
       },
       resolve: async (_, args, context) => {
         // try {
-          const post = await context.prisma.post.findUnique({
-            where: { id: args.id },
-          });
+        const post = await context.prisma.post.findUnique({
+          where: { id: args.id },
+        });
 
-          // if (!post) {
-          //   // console.warn(`[Query.post] No post found for id: ${args.id}`);
-          //   return null;
-          // }
+        // if (!post) {
+        //   // console.warn(`[Query.post] No post found for id: ${args.id}`);
+        //   return null;
+        // }
 
-          return post;
+        return post;
         // } catch (error) {
         //   // console.error('[Query.post] Error resolving post:', error);
         //   throw error;
@@ -217,13 +228,43 @@ const QueryType = new GraphQLObjectType<any, Context>({
     },
     users: {
       type: new GraphQLList(UserObject),
-      resolve: async (_, __, context) => {
-        // try {
-          return await context.prisma.user.findMany();
-        // } catch (error) {
-        //   // console.error('[Query.users] Error resolving users:', error);
-        //   throw error;
+      resolve: async (_, __, context, info) => {
+        const requestedFields = info.fieldNodes[0].selectionSet?.selections
+          .map((field) => ('name' in field ? field.name.value : ''))
+          .filter(Boolean);
+
+        const include: { userSubscribedTo?: boolean; subscribedToUser?: boolean } = {};
+
+        if (requestedFields?.includes('userSubscribedTo')) {
+          include.userSubscribedTo = true;
+        }
+        if (requestedFields?.includes('subscribedToUser')) {
+          include.subscribedToUser = true;
+        }
+
+        const users = await context.prisma.user.findMany({
+          include: Object.keys(include).length > 0 ? include : undefined,
+        });
+
+        // Если данные были загружены через include, помечаем их как предзагруженные
+        // if (include.userSubscribedTo) {
+        //   users.forEach(user => {
+        //     if ('userSubscribedTo' in user) {
+        //       user.userSubscribedToPreloaded = true;
+        //       // user.userSubscribedTo = true;
+        //     }
+        //   });
         // }
+        // if (include.subscribedToUser) {
+        //   users.forEach(user => {
+        //     if ('subscribedToUser' in user) {
+        //       user.subscribedToUserPreloaded = true;
+        //       // user.subscribedToUser = true;
+        //     }
+        //   });
+        // }
+
+        return users;
       },
     },
     user: {
@@ -232,28 +273,38 @@ const QueryType = new GraphQLObjectType<any, Context>({
         id: { type: new GraphQLNonNull(UUIDType) },
       },
       resolve: async (_, args, context) => {
-        // try {
-          const user = await context.prisma.user.findUnique({
-            where: { id: args.id }
-          });
 
-          // if (!user) {
-          //   // console.warn(`[Query.user] No user found for id: ${args.id}`);
-          //   return null;
-          // }
+        const user = await context.prisma.user.findUnique({
+          where: { id: args.id }
+        });
 
-          return user;
-        // } catch (error) {
-        //   // console.error('[Query.user] Error resolving user:', error);
-        //   throw error;
-        // }
+        return user;
+
       },
+      // resolve: async (_, __, context, data) => {
+      //   const requestedFields = data.fieldNodes[0].selectionSet?.selections
+      //     .map((field) => ('name' in field ? field.name.value : ''))
+      //     .filter(Boolean);
+
+      //   const include: { userSubscribedTo?: boolean; subscribedToUser?: boolean } = {};
+
+      //   if (requestedFields && requestedFields.includes('userSubscribedTo')) {
+      //     include.userSubscribedTo = true;
+      //   }
+      //   if (requestedFields && requestedFields.includes('subscribedToUser')) {
+      //     include.subscribedToUser = true;
+      //   }
+
+      //   return context.prisma.user.findMany({
+      //     include: Object.keys(include).length ? include : undefined,
+      //   });
+      // },
     },
     profiles: {
       type: new GraphQLList(ProfileObject),
       resolve: async (_, __, context) => {
         // try {
-          return await context.prisma.profile.findMany();
+        return await context.prisma.profile.findMany();
         // } catch (error) {
         //   // console.error('[Query.profiles] Error resolving profiles:', error);
         //   throw error;
@@ -268,16 +319,16 @@ const QueryType = new GraphQLObjectType<any, Context>({
       resolve: async (_, args, context) => {
 
         // try {
-          const profile = await context.prisma.profile.findUnique({
-            where: { id: args.id }
-          });
+        const profile = await context.prisma.profile.findUnique({
+          where: { id: args.id }
+        });
 
-          // if (!profile) {
-          //   // console.warn(`[Query.profile] No profile found for id: ${args.id}`);
-          //   return null;
-          // }
+        // if (!profile) {
+        //   // console.warn(`[Query.profile] No profile found for id: ${args.id}`);
+        //   return null;
+        // }
 
-          return profile;
+        return profile;
         // } catch (error) {
         //   // console.error('[Query.profile] Error resolving profile:', error);
         //   throw error;

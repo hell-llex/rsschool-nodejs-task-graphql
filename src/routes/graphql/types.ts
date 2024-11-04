@@ -12,7 +12,7 @@ import {
   GraphQLScalarType,
   Kind,
 } from 'graphql';
-import type { PrismaClient, User } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 import DataLoader from 'dataloader';
 
 export interface Context {
@@ -66,6 +66,13 @@ export const UUIDType = new GraphQLScalarType({
 //   parseValue: String,
 //   parseLiteral: (ast: any) => (ast.kind === 'StringValue' ? ast.value : null),
 // });
+
+// export interface ExtendedUser extends User {
+//   userSubscribedToPreloaded?: boolean;
+//   subscribedToUserPreloaded?: boolean;
+//   userSubscribedTo?: User[];
+//   subscribedToUser?: User[];
+// }
 
 export const MemberTypeObject = new GraphQLObjectType({
   name: 'MemberType',

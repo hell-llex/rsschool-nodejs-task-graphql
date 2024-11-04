@@ -60,7 +60,7 @@ export function createLoaders(prisma: PrismaClient) {
       return subscriberIds.map(id =>
         subscriptions
           .filter(sub => sub.subscriberId === id)
-          .map(sub => sub.author)
+          .map(sub => sub.author) || []
       );
     }, { cache: false }),
 
@@ -79,7 +79,7 @@ export function createLoaders(prisma: PrismaClient) {
       return authorIds.map(id =>
         subscriptions
           .filter(sub => sub.authorId === id)
-          .map(sub => sub.subscriber)
+          .map(sub => sub.subscriber) || []
       );
     }, { cache: false }),
   };
